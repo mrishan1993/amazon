@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# EC2/cron-ready ASIN tracker with headless Chrome, rotating logs, screenshots, CAPTCHA detection, and explicit waits.
+# EC2/cron-ready ASIN tracker with headless Chrome and terminal-only logging.
 
 import os
 import re
@@ -24,59 +24,32 @@ from selenium.common.exceptions import (
     StaleElementReferenceException,
 )
 from webdriver_manager.chrome import ChromeDriverManager
-from logging.handlers import RotatingFileHandler
 
 # ----------------------------
-# Paths and logging
+# Terminal-only logging
 # ----------------------------
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-LOG_DIR = os.path.join(BASE_DIR, "logs")
-SHOT_DIR = os.path.join(BASE_DIR, "shots")
-os.makedirs(LOG_DIR, exist_ok=True)
-os.makedirs(SHOT_DIR, exist_ok=True)
-
-LOG_FILE = os.path.join(LOG_DIR, "tracker.log")
-
 def init_logging():
     logger = logging.getLogger("asin-tracker")
     logger.setLevel(logging.INFO)
-    logger.propagate = False  # avoid duplicate prints via root
-
-    # idempotent re-init
+    logger.propagate = False  # avoid duplicates via root
     if logger.handlers:
         logger.handlers.clear()
-
     fmt = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-
-    # File (rotating)
-    fh = RotatingFileHandler(LOG_FILE, maxBytes=5_000_000, backupCount=5, encoding="utf-8")
-    fh.setLevel(logging.INFO)
-    fh.setFormatter(fmt)
-    logger.addHandler(fh)
-
-    # Console (stderr)
-    ch = logging.StreamHandler()
+    ch = logging.StreamHandler()  # stderr
     ch.setLevel(logging.INFO)
     ch.setFormatter(fmt)
     logger.addHandler(ch)
-
-    logger.info(f"Logging initialized -> {LOG_FILE}")
-    logger.info(f"cwd={os.getcwd()} base_dir={BASE_DIR}")
+    logger.info("Terminal logging initialized")
+    logger.info(f"cwd={os.getcwd()}")
     return logger
 
 logger = init_logging()
 
-def snap(driver, name):
-    path = os.path.join(SHOT_DIR, name)
-    try:
-        ok = driver.save_screenshot(path)
-        logger.info(f"Saved screenshot: {path} (ok={ok})")
-    except Exception as e:
-        logger.warning(f"Screenshot failed {path}: {e}")
-
 # ----------------------------
 # Config
 # ----------------------------
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
 def load_config(path="track.yaml"):
     path_abs = path if os.path.isabs(path) else os.path.join(BASE_DIR, path)
     logger.info(f"Loading config: {path_abs}")
@@ -185,7 +158,6 @@ def set_delivery_pin(driver, pincode, wait=15):
                 except TimeoutException:
                     continue
             logger.info("Delivery PIN applied")
-            snap(driver, f"pin_{pincode}.png")
         else:
             logger.info("PIN input not found; skipping")
     except Exception as e:
@@ -223,14 +195,12 @@ def scrape_asin(driver, asin, wait_secs=20):
         driver.get(product_url)
         W(driver, wait_secs).until(EC.presence_of_element_located((By.CSS_SELECTOR, "body")))
         time.sleep(random.uniform(0.7, 1.4))
-        snap(driver, f"pdp_{asin}.png")
     except Exception as e:
         logger.error(f"PDP load failed {asin}: {e}")
         return data
 
     if hit_robot_check(driver):
         logger.error("Robot Check on PDP")
-        snap(driver, f"robot_pdp_{asin}.png")
         return data
 
     data["price"] = first_text(driver, [
@@ -284,14 +254,12 @@ def get_search_rank(driver, keyword, asin, max_pages=5, wait_secs=20, pause=(1.4
             driver.get(search_url)
             W(driver, wait_secs).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.s-main-slot")))
             time.sleep(random.uniform(*pause))
-            snap(driver, f"search_{keyword.replace(' ','_')}_p{page}.png")
         except Exception as e:
             logger.warning(f"Search load issue p{page}: {e}")
             continue
 
         if hit_robot_check(driver):
             logger.error("Robot Check on search")
-            snap(driver, f"robot_search_{keyword.replace(' ','_')}_p{page}.png")
             return None
 
         cards = driver.find_elements(By.CSS_SELECTOR, "div.s-main-slot div.s-search-result[data-asin]")
@@ -366,7 +334,7 @@ def main():
 
     rows = []
     try:
-        # Normalize geo
+        # Normalize geo (optional but helps consistency)
         set_delivery_pin(driver, pincode)
 
         # PDP metrics once per ASIN
