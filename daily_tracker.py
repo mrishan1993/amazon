@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# EC2/cron-ready ASIN tracker with headless Chrome, rotating logs, screenshots, CAPTCHA detection, and explicit waits. [web:136][web:197][web:189]
+# EC2/cron-ready ASIN tracker with headless Chrome, rotating logs, screenshots, CAPTCHA detection, and explicit waits.
 
 import os
 import re
@@ -38,14 +38,19 @@ os.makedirs(SHOT_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOG_DIR, "tracker.log")
 
 def init_logging():
-    logging.basicConfig(level=logging.INFO, force=True)
     logger = logging.getLogger("asin-tracker")
     logger.setLevel(logging.INFO)
+    logger.propagate = False  # avoid duplicate prints via root
+
+    # idempotent re-init
+    if logger.handlers:
+        logger.handlers.clear()
+
+    fmt = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 
     # File (rotating)
     fh = RotatingFileHandler(LOG_FILE, maxBytes=5_000_000, backupCount=5, encoding="utf-8")
     fh.setLevel(logging.INFO)
-    fmt = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
     fh.setFormatter(fmt)
     logger.addHandler(fh)
 
@@ -64,7 +69,7 @@ logger = init_logging()
 def snap(driver, name):
     path = os.path.join(SHOT_DIR, name)
     try:
-        ok = driver.save_screenshot(path)  # viewport screenshot for debugging [web:189]
+        ok = driver.save_screenshot(path)
         logger.info(f"Saved screenshot: {path} (ok={ok})")
     except Exception as e:
         logger.warning(f"Screenshot failed {path}: {e}")
@@ -84,7 +89,7 @@ def load_config(path="track.yaml"):
 def get_driver(proxy=None, headless=True, user_agent=None, chrome_binary=None, accept_language="en-IN,en;q=0.9"):
     options = Options()
     if headless:
-        options.add_argument("--headless=new")  # modern headless for servers/CI [web:136]
+        options.add_argument("--headless=new")  # modern headless for Chrome ≥109
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
@@ -92,7 +97,7 @@ def get_driver(proxy=None, headless=True, user_agent=None, chrome_binary=None, a
     options.add_argument("--lang=en-IN")
     options.add_argument(f"--accept-lang={accept_language}")
 
-    # Reduce obvious automation hints (not a bypass)
+    # light fingerprint hardening (not a bypass)
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option("useAutomationExtension", False)
 
@@ -403,4 +408,4 @@ def main():
     logger.info(f"Wrote CSV: {out}")
 
 if __name__ == "__main__":
-    main
+    main()

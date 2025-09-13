@@ -1,0 +1,6 @@
+email:
+  to: "ishan.gupta.7764@gmail.com"
+  from: "mrishan1993@gmail.com"
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+  password: "ovpi sfba vysj nwic"
