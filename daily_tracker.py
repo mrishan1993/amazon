@@ -6,7 +6,9 @@ import smtplib
 from email.message import EmailMessage
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
 
 # ----------------------------
 # Load config
@@ -32,7 +34,7 @@ def get_driver(proxy=None, headless=True):
     if proxy:
         options.add_argument(f"--proxy-server={proxy}")
 
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.set_page_load_timeout(30)
     return driver
 
@@ -63,7 +65,11 @@ def scrape_asin(driver, asin):
         price_elem = driver.find_element(By.ID, "priceblock_ourprice")
         data["price"] = price_elem.text
     except:
-        data["price"] = None
+        try:
+            price_elem = driver.find_element(By.ID, "priceblock_dealprice")
+            data["price"] = price_elem.text
+        except:
+            data["price"] = None
 
     # Rating
     try:
@@ -86,6 +92,7 @@ def scrape_asin(driver, asin):
 # ----------------------------
 def get_search_rank(driver, keyword, asin, max_pages=5):
     print(f"🔍 Searching for keyword '{keyword}' to find ASIN {asin}")
+    rank_counter = 1
     for page in range(1, max_pages + 1):
         search_url = f"https://www.amazon.in/s?k={keyword.replace(' ', '+')}&page={page}"
         try:
@@ -96,12 +103,15 @@ def get_search_rank(driver, keyword, asin, max_pages=5):
             return None
 
         try:
-            elements = driver.find_elements(By.XPATH, f'//a[contains(@href, "{asin}")]')
-            if elements:
-                print(f"✅ ASIN {asin} found on page {page}")
-                return (page - 1) * 16 + 1  # Approx rank (16 results per page)
+            results = driver.find_elements(By.XPATH, "//div[@data-asin and @data-component-type='s-search-result']")
+            for result in results:
+                result_asin = result.get_attribute("data-asin")
+                if result_asin == asin:
+                    print(f"✅ ASIN {asin} found on page {page}, rank {rank_counter}")
+                    return rank_counter
+                rank_counter += 1
         except Exception as e:
-            print(f"⚠️ Error finding ASIN {asin} on page {page}: {e}")
+            print(f"⚠️ Error scanning page {page}: {e}")
 
     print(f"❌ ASIN {asin} not found in first {max_pages} pages")
     return None
@@ -134,21 +144,18 @@ def send_email(config, csv_file):
 # ----------------------------
 def main():
     config = load_config()
-
-    proxies = []  # Add proxy list if needed
-    proxy = random.choice(proxies) if proxies else None
-
-    driver = get_driver(proxy=proxy, headless=False)
+    driver = get_driver(headless=False)
 
     all_results = []
 
     for keyword, asins in config["tracking"]["keywords_asins"].items():
+        print(f"\n===== Keyword: {keyword} =====")
         for asin in asins:
             asin_data = scrape_asin(driver, asin)
             asin_data["keyword"] = keyword
             asin_data["search_rank"] = get_search_rank(driver, keyword, asin)
             all_results.append(asin_data)
-            time.sleep(random.uniform(3, 6))
+            time.sleep(random.uniform(2, 4))
 
     driver.quit()
 
@@ -160,7 +167,6 @@ def main():
 
     # Send email
     send_email(config, csv_file)
-
 
 if __name__ == "__main__":
     main()
