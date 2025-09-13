@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
+# EC2/cron-ready ASIN tracker with headless Chrome, rotating logs, screenshots, CAPTCHA detection, and explicit waits. [web:136][web:197][web:189]
+
 import os
 import re
 import yaml
 import time
 import random
 import logging
-from logging.handlers import RotatingFileHandler
-from datetime import datetime
+import smtplib
 import pandas as pd
+from datetime import datetime
+from email.message import EmailMessage
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -21,9 +24,10 @@ from selenium.common.exceptions import (
     StaleElementReferenceException,
 )
 from webdriver_manager.chrome import ChromeDriverManager
+from logging.handlers import RotatingFileHandler
 
 # ----------------------------
-# Paths
+# Paths and logging
 # ----------------------------
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 LOG_DIR = os.path.join(BASE_DIR, "logs")
@@ -31,52 +35,64 @@ SHOT_DIR = os.path.join(BASE_DIR, "shots")
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(SHOT_DIR, exist_ok=True)
 
-# ----------------------------
-# Logging
-# ----------------------------
-logger = logging.getLogger("asin-tracker")
-logger.setLevel(logging.INFO)
-handler = RotatingFileHandler(
-    os.path.join(LOG_DIR, "tracker.log"),
-    maxBytes=5_000_000,
-    backupCount=5,
-    encoding="utf-8"
-)
-fmt = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-handler.setFormatter(fmt)
-logger.addHandler(handler)
+LOG_FILE = os.path.join(LOG_DIR, "tracker.log")
+
+def init_logging():
+    logging.basicConfig(level=logging.INFO, force=True)
+    logger = logging.getLogger("asin-tracker")
+    logger.setLevel(logging.INFO)
+
+    # File (rotating)
+    fh = RotatingFileHandler(LOG_FILE, maxBytes=5_000_000, backupCount=5, encoding="utf-8")
+    fh.setLevel(logging.INFO)
+    fmt = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+    fh.setFormatter(fmt)
+    logger.addHandler(fh)
+
+    # Console (stderr)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    ch.setFormatter(fmt)
+    logger.addHandler(ch)
+
+    logger.info(f"Logging initialized -> {LOG_FILE}")
+    logger.info(f"cwd={os.getcwd()} base_dir={BASE_DIR}")
+    return logger
+
+logger = init_logging()
 
 def snap(driver, name):
     path = os.path.join(SHOT_DIR, name)
     try:
-        ok = driver.save_screenshot(path)
+        ok = driver.save_screenshot(path)  # viewport screenshot for debugging [web:189]
         logger.info(f"Saved screenshot: {path} (ok={ok})")
     except Exception as e:
-        logger.warning(f"Failed to save screenshot {path}: {e}")
+        logger.warning(f"Screenshot failed {path}: {e}")
 
 # ----------------------------
-# Config loading
+# Config
 # ----------------------------
 def load_config(path="track.yaml"):
-    with open(path, "r") as f:
+    path_abs = path if os.path.isabs(path) else os.path.join(BASE_DIR, path)
+    logger.info(f"Loading config: {path_abs}")
+    with open(path_abs, "r") as f:
         return yaml.safe_load(f)
 
 # ----------------------------
-# Browser setup (headless-friendly)
+# Browser
 # ----------------------------
 def get_driver(proxy=None, headless=True, user_agent=None, chrome_binary=None, accept_language="en-IN,en;q=0.9"):
     options = Options()
     if headless:
-        options.add_argument("--headless=new")
+        options.add_argument("--headless=new")  # modern headless for servers/CI [web:136]
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
-    options.add_argument(f"--lang=en-IN")
+    options.add_argument("--lang=en-IN")
     options.add_argument(f"--accept-lang={accept_language}")
-    options.add_argument(f"--force-device-scale-factor=1")
 
-    # light fingerprint hardening (not a bypass)
+    # Reduce obvious automation hints (not a bypass)
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option("useAutomationExtension", False)
 
@@ -85,6 +101,7 @@ def get_driver(proxy=None, headless=True, user_agent=None, chrome_binary=None, a
     if proxy:
         options.add_argument(f"--proxy-server={proxy}")
 
+    # Chrome binary path
     if chrome_binary and os.path.exists(chrome_binary):
         options.binary_location = chrome_binary
     elif os.path.exists("/usr/bin/google-chrome"):
@@ -98,14 +115,13 @@ def get_driver(proxy=None, headless=True, user_agent=None, chrome_binary=None, a
     return driver
 
 # ----------------------------
-# Bot-check / CAPTCHA detection
+# Bot check detection
 # ----------------------------
 def hit_robot_check(driver):
     url = (driver.current_url or "").lower()
     title = (driver.title or "").lower()
     if "validatecaptcha" in url or "robot check" in title:
         return True
-    # crude heuristic: no result grid + captcha markers
     try:
         if driver.find_elements(By.CSS_SELECTOR, "form[action*='validateCaptcha']"):
             return True
@@ -114,7 +130,7 @@ def hit_robot_check(driver):
     return False
 
 # ----------------------------
-# Optional: set delivery PIN code (geo affects results)
+# Optional: set delivery PIN code
 # ----------------------------
 def set_delivery_pin(driver, pincode, wait=15):
     if not pincode:
@@ -128,15 +144,13 @@ def set_delivery_pin(driver, pincode, wait=15):
         logger.warning(f"Home not ready: {e}")
         return
     try:
-        # Open location popover
         try:
             pop = W(driver, 10).until(EC.element_to_be_clickable((By.ID, "nav-global-location-popover-link")))
         except TimeoutException:
             pop = W(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#glow-ingress-line2, #nav-global-location-popover-link")))
         pop.click()
-        time.sleep(0.8)
+        time.sleep(0.6)
 
-        # Input pin (ids vary)
         pin_inputs = [
             (By.ID, "GLUXZipUpdateInput"),
             (By.ID, "GLUXZipUpdateInput_0"),
@@ -152,8 +166,7 @@ def set_delivery_pin(driver, pincode, wait=15):
         if pin_box:
             pin_box.clear()
             pin_box.send_keys(str(pincode))
-            time.sleep(0.5)
-            # Apply/Continue
+            time.sleep(0.4)
             for by, sel in [
                 (By.ID, "GLUXZipUpdate"),
                 (By.CSS_SELECTOR, "span#GLUXZipUpdate input, input#GLUXZipUpdate"),
@@ -162,7 +175,7 @@ def set_delivery_pin(driver, pincode, wait=15):
                 try:
                     btn = W(driver, 5).until(EC.element_to_be_clickable((by, sel)))
                     btn.click()
-                    time.sleep(1.5)
+                    time.sleep(1.2)
                     break
                 except TimeoutException:
                     continue
@@ -194,24 +207,24 @@ def first_text(driver, selectors):
     return None
 
 # ----------------------------
-# Scrape metrics for an ASIN
+# PDP scrape
 # ----------------------------
 def scrape_asin(driver, asin, wait_secs=20):
     product_url = f"https://www.amazon.in/dp/{asin}"
-    logger.info(f"Open PDP: {asin} -> {product_url}")
+    logger.info(f"PDP open: {asin} -> {product_url}")
     data = {"asin": asin, "url": product_url}
 
     try:
         driver.get(product_url)
         W(driver, wait_secs).until(EC.presence_of_element_located((By.CSS_SELECTOR, "body")))
-        time.sleep(random.uniform(0.8, 1.5))
+        time.sleep(random.uniform(0.7, 1.4))
         snap(driver, f"pdp_{asin}.png")
     except Exception as e:
         logger.error(f"PDP load failed {asin}: {e}")
         return data
 
     if hit_robot_check(driver):
-        logger.error("Robot Check encountered on PDP")
+        logger.error("Robot Check on PDP")
         snap(driver, f"robot_pdp_{asin}.png")
         return data
 
@@ -221,12 +234,10 @@ def scrape_asin(driver, asin, wait_secs=20):
         (By.ID, "priceblock_dealprice"),
         (By.ID, "priceblock_saleprice"),
     ])
-
     data["rating"] = first_text(driver, [
         (By.CSS_SELECTOR, "span[data-hook='rating-out-of-text']"),
         (By.CSS_SELECTOR, "#acrPopover span.a-icon-alt"),
     ])
-
     data["review_count"] = first_text(driver, [
         (By.ID, "acrCustomerReviewText"),
         (By.CSS_SELECTOR, "span[data-hook='total-review-count']"),
@@ -252,14 +263,14 @@ def scrape_asin(driver, asin, wait_secs=20):
             bsr_text = f"#{m.group(1)} in {m.group(2).strip()}"
     data["bsr"] = bsr_text
 
-    logger.info(f"PDP metrics {asin}: price={data['price']} rating={data['rating']} reviews={data['review_count']}")
+    logger.info(f"PDP {asin}: price={data['price']} rating={data['rating']} reviews={data['review_count']}")
     return data
 
 # ----------------------------
-# Find search rank for ASIN by keyword
+# Search rank
 # ----------------------------
-def get_search_rank(driver, keyword, asin, max_pages=5, wait_secs=20, pause=(1.6, 3.2)):
-    logger.info(f"Search '{keyword}' for ASIN {asin}")
+def get_search_rank(driver, keyword, asin, max_pages=5, wait_secs=20, pause=(1.4, 2.6)):
+    logger.info(f"Search '{keyword}' for {asin}")
     abs_index = 0
 
     for page in range(1, max_pages + 1):
@@ -270,27 +281,27 @@ def get_search_rank(driver, keyword, asin, max_pages=5, wait_secs=20, pause=(1.6
             time.sleep(random.uniform(*pause))
             snap(driver, f"search_{keyword.replace(' ','_')}_p{page}.png")
         except Exception as e:
-            logger.warning(f"Search load issue page {page}: {e}")
+            logger.warning(f"Search load issue p{page}: {e}")
             continue
 
         if hit_robot_check(driver):
-            logger.error("Robot Check encountered on search")
+            logger.error("Robot Check on search")
             snap(driver, f"robot_search_{keyword.replace(' ','_')}_p{page}.png")
             return None
 
         cards = driver.find_elements(By.CSS_SELECTOR, "div.s-main-slot div.s-search-result[data-asin]")
         data_asins = [c.get_attribute("data-asin") for c in cards if c.get_attribute("data-asin")]
-        logger.info(f"Page {page}: {len(data_asins)} result tiles; first 10 ASINs: {data_asins[:10]}")
+        logger.info(f"Page {page}: tiles={len(data_asins)} first10={data_asins[:10]}")
 
         page_pos = 0
         for data_asin in data_asins:
             page_pos += 1
             abs_index += 1
             if data_asin == asin:
-                logger.info(f"FOUND {asin} on page {page} pos {page_pos} abs {abs_index}")
+                logger.info(f"FOUND {asin} page={page} pos={page_pos} abs={abs_index}")
                 return {"page": page, "position": page_pos, "absolute": abs_index}
 
-        # Pagination guard
+        # pagination stop
         try:
             next_btn = driver.find_element(By.CSS_SELECTOR, "a.s-pagination-next")
             if "disabled" in next_btn.get_attribute("class"):
@@ -298,8 +309,37 @@ def get_search_rank(driver, keyword, asin, max_pages=5, wait_secs=20, pause=(1.6
         except NoSuchElementException:
             break
 
-    logger.info(f"NOT FOUND {asin} within {max_pages} page(s) for '{keyword}'")
+    logger.info(f"NOT FOUND {asin} within {max_pages} pages for '{keyword}'")
     return None
+
+# ----------------------------
+# Email
+# ----------------------------
+def send_email(config, csv_file):
+    try:
+        email_cfg = config["tracking"]["email"]
+    except Exception:
+        logger.info("Email not configured; skipping send.")
+        return
+
+    logger.info("Sending email with CSV report")
+    msg = EmailMessage()
+    msg["Subject"] = "Daily Amazon ASIN Tracking Report"
+    msg["From"] = email_cfg["from"]
+    msg["To"] = email_cfg["to"]
+    msg.set_content("Attached is the daily ASIN tracking report.")
+
+    with open(csv_file, "rb") as f:
+        msg.add_attachment(f.read(), maintype="application", subtype="csv", filename=os.path.basename(csv_file))
+
+    try:
+        with smtplib.SMTP(email_cfg["smtp_server"], email_cfg["smtp_port"]) as server:
+            server.starttls()
+            server.login(email_cfg["from"], email_cfg["password"])
+            server.send_message(msg)
+        logger.info("Email sent successfully")
+    except Exception as e:
+        logger.error(f"Email send failed: {e}")
 
 # ----------------------------
 # Main
@@ -310,7 +350,7 @@ def main():
     asin_map = tracking.get("keywords_asins", {})
     proxies = tracking.get("proxies", [])
     ua_list = tracking.get("user_agents", [])
-    pincode = tracking.get("pincode")  # optional: set a consistent PIN
+    pincode = tracking.get("pincode")  # optional
 
     proxy = random.choice(proxies) if proxies else None
     ua = random.choice(ua_list) if ua_list else None
@@ -321,17 +361,17 @@ def main():
 
     rows = []
     try:
-        # Normalize location (optional but recommended)
+        # Normalize geo
         set_delivery_pin(driver, pincode)
 
-        # Scrape PDP metrics once per ASIN
+        # PDP metrics once per ASIN
         unique_asins = {a for lst in asin_map.values() for a in lst}
         asin_metrics = {}
         for a in unique_asins:
             asin_metrics[a] = scrape_asin(driver, a)
-            time.sleep(random.uniform(0.6, 1.2))
+            time.sleep(random.uniform(0.5, 1.1))
 
-        # Search ranks per keyword-ASIN
+        # Search ranks
         for keyword, asins in asin_map.items():
             logger.info(f"=== Keyword: {keyword} ===")
             for a in asins:
@@ -350,14 +390,17 @@ def main():
                     "rank_absolute": rank["absolute"] if rank else None,
                     "product_url": base.get("url"),
                 })
-                time.sleep(random.uniform(0.6, 1.2))
+                time.sleep(random.uniform(0.5, 1.1))
     finally:
-        driver.quit()
+        try:
+            driver.quit()
+        except Exception:
+            pass
         logger.info("Driver closed")
 
-    out = f"daily_amazon_tracking_{datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')}.csv"
+    out = os.path.join(BASE_DIR, f"daily_amazon_tracking_{datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')}.csv")
     pd.DataFrame(rows).to_csv(out, index=False)
     logger.info(f"Wrote CSV: {out}")
 
 if __name__ == "__main__":
-    main()
+    main
