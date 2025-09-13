@@ -23,12 +23,10 @@ def get_bsr(domain, asin):
     soup = BeautifulSoup(r.text, "html.parser")
 
     bsr_text = None
-    # Detail bullets
     for li in soup.select("#detailBullets_feature_div li"):
         if "Best Sellers Rank" in li.get_text():
             bsr_text = li.get_text(strip=True)
             break
-    # Product details table
     if not bsr_text:
         for tr in soup.select("#productDetails_detailBullets_sections1 tr"):
             if "Best Sellers Rank" in tr.get_text():
@@ -46,15 +44,15 @@ def get_keyword_rank(domain, asin, keyword, max_pages=5):
         results = soup.find_all("div", {"data-asin": True})
         for idx, item in enumerate(results, start=1):
             if item["data-asin"] == asin:
-                return f"Page {page}, Position {idx}"
+                return page, idx  # return separately
         time.sleep(1)
-    return f"Not found in top {max_pages*20} results"
+    return None, None   # not found
 
 # ---------- Function: Save CSV ----------
 def save_to_csv(data, filename="results.csv"):
     with open(filename, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["Keyword", "ASIN", "Rank", "BSR", "Timestamp"])
+        writer.writerow(["Keyword", "ASIN", "Page", "Position", "BSR", "Timestamp"])
         for row in data:
             writer.writerow(row)
 
@@ -79,25 +77,30 @@ def send_email(email_cfg, subject, body, attachment="results.csv"):
 
 # ---------- Main ----------
 if __name__ == "__main__":
-    # load keyword data
     with open("keywords_car_body_polish.yaml", "r") as f:
-        keywords_asins = yaml.safe_load(f)["keywords_asins"]
+        cfg = yaml.safe_load(f)
 
-    # load email config
-    with open("track.yaml", "r") as f:
-        email_cfg = yaml.safe_load(f)["email"]
+    asin = cfg["asin"]
+    domain = cfg["domain"]
+    keywords = cfg["keywords"]
 
-    domain = "https://www.amazon.in"
+    with open("email.yaml", "r") as f:
+        email_config = yaml.safe_load(f)
+    email_cfg = email_config["email"]
+
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     results = []
 
-    for keyword, asins in keywords_asins.items():
-        for asin in asins:
-            rank = get_keyword_rank(domain, asin, keyword)
-            bsr = get_bsr(domain, asin)
-            print(f"{keyword} → {asin} → {rank} | BSR: {bsr}")
-            results.append([keyword, asin, rank, bsr, timestamp])
+    for keyword in keywords:
+        page, pos = get_keyword_rank(domain, asin, keyword)
+        bsr = get_bsr(domain, asin)
+
+        page_val = page if page else "Not found"
+        pos_val = pos if pos else "Not found"
+
+        print(f"{keyword} → {asin} → Page {page_val}, Position {pos_val} | BSR: {bsr}")
+        results.append([keyword, asin, page_val, pos_val, bsr, timestamp])
 
     # Save CSV
     save_to_csv(results)
