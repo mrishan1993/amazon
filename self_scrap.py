@@ -6,6 +6,7 @@ import csv
 import smtplib
 import ssl
 from email.message import EmailMessage
+import os
 from datetime import datetime
 
 HEADERS = {
