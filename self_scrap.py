@@ -77,14 +77,18 @@ def send_email(email_cfg, subject, body, attachment="results.csv"):
 
 # ---------- Main ----------
 if __name__ == "__main__":
-    with open("keywords_car_body_polish.yaml", "r") as f:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    yaml_path = os.path.join(BASE_DIR, "keywords_car_body_polish.yaml")
+
+    with open(yaml_path, "r") as f:
         cfg = yaml.safe_load(f)
 
     asin = cfg["asin"]
     domain = cfg["domain"]
     keywords = cfg["keywords"]
 
-    with open("email.yaml", "r") as f:
+    email_path = os.path.join(BASE_DIR, "email.yaml")
+    with open(email_path, "r") as f:
         email_config = yaml.safe_load(f)
     email_cfg = email_config["email"]
 
