@@ -61,14 +61,30 @@ def load_config(path="track.yaml"):
 # ----------------------------
 def get_driver(proxy=None, headless=True, user_agent=None, chrome_binary=None, accept_language="en-IN,en;q=0.9"):
     options = Options()
-    if headless:
-        options.add_argument("--headless=new")  # modern headless for Chrome ≥109
+    options.add_argument('--headless=new')
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
-    options.add_argument("--lang=en-IN")
-    options.add_argument(f"--accept-lang={accept_language}")
+    
+    # SSL/Certificate fixes
+    options.add_argument("--ignore-certificate-errors")
+    options.add_argument("--ignore-ssl-errors")
+    options.add_argument("--ignore-certificate-errors-spki-list")
+    options.add_argument("--ignore-urlfetcher-cert-requests")
+    options.add_argument("--disable-web-security")
+    options.add_argument("--allow-running-insecure-content")
+    options.add_argument("--insecure")
+    options.add_argument("--allow-insecure-localhost")
+    
+    # Performance and stability
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-plugins")
+    options.add_argument("--disable-images")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
+    options.add_argument("user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36")
 
     # light fingerprint hardening (not a bypass)
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
