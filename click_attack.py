@@ -45,6 +45,7 @@ def get_driver(headless=True, proxy=None, driver_path=None):
         if not driver_path:
             print("❌ Could not find chromedriver in PATH. Please install it or set driver_path manually.")
             sys.exit(1)
+
     try:
         service = Service(driver_path)
         driver = webdriver.Chrome(service=service, options=options)
@@ -87,9 +88,9 @@ def click_asin(driver, asin, max_attempts=2):
 def perform_degrade(driver, keyword, asin_list):
     search_url = f"https://www.amazon.in/s?k={keyword.replace(' ', '+')}"
     driver.get(search_url)
+    print(f"\n🔍 Searching for keyword: {keyword}")
 
     for asin in asin_list:
-        print(f"\n🔍 Searching for keyword: {keyword}")
         browse_time = random.uniform(5, 10)
         print(f"⌛ Browsing search page for {browse_time:.2f} seconds...")
         time.sleep(browse_time)
@@ -102,11 +103,9 @@ def perform_degrade(driver, keyword, asin_list):
 
             try:
                 driver.back()
-                # Wait until search bar confirms the page is back
                 WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.ID, "twotabsearchtextbox"))
                 )
-                # Small scroll + wait to make DOM stable
                 driver.execute_script("window.scrollBy(0, 300);")
                 time.sleep(random.uniform(2, 4))
                 print(f"🔄 Back on search page for keyword: {keyword}")
@@ -122,14 +121,19 @@ def perform_degrade(driver, keyword, asin_list):
 def main():
     config = load_config()
 
+    asin_map = config.get("asin_map")
+    if not asin_map:
+        print("❌ No asin_map found in config.")
+        sys.exit(1)
+
     proxies = config.get("proxies", [])
     proxy = random.choice(proxies) if proxies else None
     print("🌐 Using proxy:", proxy or "None")
 
-    driver = get_driver(proxy=proxy, headless=False)  # set headless=True for background runs
+    driver = get_driver(proxy=proxy, headless=True)  # use headless=True for EC2/cron
 
     try:
-        for keyword, asin_list in config.get("asin_map", {}).items():
+        for keyword, asin_list in asin_map.items():
             perform_degrade(driver, keyword, asin_list)
     finally:
         driver.quit()
