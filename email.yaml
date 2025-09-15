@@ -1,5 +1,8 @@
 email:
-  to: "ishan.gupta.7764@gmail.com"
+  to:
+    - "ishan.gupta.7764@gmail.com"
+    - "another@example.com"
+    - "third.person@example.com"
   from: "mrishan1993@gmail.com"
   smtp_server: "smtp.gmail.com"
   smtp_port: 587

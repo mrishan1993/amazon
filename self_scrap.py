@@ -61,7 +61,11 @@ def save_to_csv(data, filename="results.csv"):
 def send_email(email_cfg, subject, body, attachment="results.csv"):
     msg = EmailMessage()
     msg["From"] = email_cfg["from"]
-    msg["To"] = email_cfg["to"]
+
+    # ensure "to" is always treated as a list
+    to_emails = email_cfg["to"] if isinstance(email_cfg["to"], list) else [email_cfg["to"]]
+    msg["To"] = ", ".join(to_emails)
+
     msg["Subject"] = subject
     msg.set_content(body)
 
@@ -74,7 +78,8 @@ def send_email(email_cfg, subject, body, attachment="results.csv"):
     with smtplib.SMTP(email_cfg["smtp_server"], email_cfg["smtp_port"]) as server:
         server.starttls(context=context)
         server.login(email_cfg["from"], email_cfg["password"])
-        server.send_message(msg)
+        server.sendmail(email_cfg["from"], to_emails, msg.as_string())
+
 
 # ---------- Main ----------
 if __name__ == "__main__":
