@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # Amazon ASIN tracker using requests + BeautifulSoup (EC2-friendly, no Selenium).
-# - Reads "tracking.keywords_asins" from track.yaml (each keyword → list of ASINs).
-# - Fetches PDP metrics (price, rating, reviews, BSR) once per unique ASIN.
-# - Finds search rank per keyword–ASIN by parsing data-asin tiles across pages.
-# - Robust headers, Accept-Language, simple CAPTCHA detection/backoff.
+# - Reads tracking.keywords_asins from track.yaml.
+# - PDP: fetch price, rating, review count, BSR once per unique ASIN.
+# - Search: find each ASIN's rank per keyword across pages via data-asin parsing with HTML + regex fallbacks.
+# - Strong desktop headers, Accept-Language en-IN, per-request Referer, CAPTCHA detection/backoff, and retries.
 # - Prints to terminal, writes timestamped CSV, and emails via tracking.email (optional).
 
 import os
@@ -45,7 +45,7 @@ logger = init_logging()
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DEFAULT_DOMAIN = "https://www.amazon.in"
 
-# Desktop-like headers + Accept-Language for locale consistency [12][18]
+# Strong desktop headers + Accept-Language for Amazon IN; Referer is added per-request where useful [2][5].
 BASE_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -55,6 +55,8 @@ BASE_HEADERS = {
     "Accept-Language": "en-IN,en;q=0.9",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "DNT": "1",
 }
 
 # ----------------------------
@@ -64,34 +66,45 @@ def load_config(path="track.yaml"):
     path_abs = path if os.path.isabs(path) else os.path.join(BASE_DIR, path)
     logger.info(f"Loading config: {path_abs}")
     with open(path_abs, "r") as f:
-        return yaml.safe_load(f)  # expects a top-level "tracking" key with "keywords_asins" [21]
+        return yaml.safe_load(f)  # expects top-level "tracking" with "keywords_asins" [1]
 
 # ----------------------------
-# HTTP helpers
+# HTTP helpers (requests.Session)
 # ----------------------------
 def make_session(headers=None, proxy=None):
     sess = requests.Session()
     sess.headers.update(headers or BASE_HEADERS)
     if proxy:
         sess.proxies.update({"http": proxy, "https": proxy})
-    return sess  # headers and proxies help reduce blocks at scale [15]
+    return sess  # session keeps cookies across PDP/search and improves stability on EC2 [2]
 
 def is_captcha(html_text):
     lt = html_text.lower()
-    return ("captcha" in lt and "amazon" in lt) or "api-services-support@amazon.com" in lt  # simple Robot Check detection [19]
+    # Common Amazon bot-check markers (Robot Check / Captcha) [4].
+    if "validatecaptcha" in lt:
+        return True
+    if "enter the characters you see below" in lt:
+        return True
+    if "api-services-support@amazon.com" in lt:
+        return True
+    if "captcha" in lt and "amazon" in lt:
+        return True
+    return False  # basic detection for headless/server scraping [4]
 
-def get_html(sess, url, max_retries=2, sleep_range=(1.0, 2.0), timeout=35):
-    for i in range(max_retries + 1):
+def get_html(sess, url, referer=None, max_retries=3, sleep_range=(1.0, 2.2), timeout=35):
+    for i in range(max_retries):
         try:
-            r = sess.get(url, timeout=timeout)
+            headers = {}
+            if referer:
+                headers["Referer"] = referer
+            r = sess.get(url, headers=headers, timeout=timeout)
             if r.status_code == 200 and not is_captcha(r.text):
-                return r.text  # success path [12]
-            logger.warning(f"Non-200 or CAPTCHA {r.status_code} for {url} (try {i+1}/{max_retries+1})")
+                return r.text  # success path [2]
+            logger.warning(f"Non-200 or CAPTCHA {r.status_code} for {url} (try {i+1}/{max_retries})")
         except Exception as e:
-            logger.warning(f"Request error {url} (try {i+1}/{max_retries+1}): {e}")
-        if i < max_retries:
-            time.sleep(random.uniform(*sleep_range))
-    return None  # give up after retries [19]
+            logger.warning(f"Request error {url} (try {i+1}/{max_retries}): {e}")
+        time.sleep(random.uniform(*sleep_range))
+    return None  # give up after retries for this URL [4]
 
 # ----------------------------
 # PDP parsing (BSR, price, rating, reviews)
@@ -99,30 +112,27 @@ def get_html(sess, url, max_retries=2, sleep_range=(1.0, 2.0), timeout=35):
 def parse_bsr_from_soup(soup):
     def clean(t):
         return re.sub(r"\s+", " ", t).strip()
-
-    # Newer bullets area [detailBullets] [5]
+    # Try bullets area first [6].
     bullets = soup.select("#detailBullets_feature_div li, #detailBulletsWrapper_feature_div li")
     for li in bullets:
         txt = clean(li.get_text(" ", strip=True))
         if "Best Sellers Rank" in txt:
-            return txt  # BSR text as-is [5]
-
-    # Older table area [productDetails] [5]
+            return txt  # BSR line as text [6]
+    # Try product details tables [6].
     rows = soup.select("#productDetails_detailBullets_sections1 tr, #productDetails_db_sections tr")
     for tr in rows:
         txt = clean(tr.get_text(" ", strip=True))
         if "Best Sellers Rank" in txt:
-            return txt  # BSR from legacy table [5]
-
-    # Fallback search anywhere
+            return txt  # legacy BSR table [6]
+    # Fallback anywhere [6].
     any_bsr = soup.find(string=lambda s: isinstance(s, str) and "Best Sellers Rank" in s)
     if any_bsr:
-        return clean(any_bsr.parent.get_text(" ", strip=True))  # fallback parse [5]
-    return None
+        return clean(any_bsr.parent.get_text(" ", strip=True))
+    return None  # no BSR found [6]
 
 def parse_pdp_metrics(html):
     soup = BeautifulSoup(html, "html.parser")
-    # Price candidates [current selector often a-price > a-offscreen] [5]
+    # Price (common selectors) [6].
     price = None
     for sel in [
         "span.a-price span.a-offscreen",
@@ -135,8 +145,7 @@ def parse_pdp_metrics(html):
         if el and el.get_text(strip=True):
             price = el.get_text(strip=True)
             break
-
-    # Rating candidates [5]
+    # Rating (common selectors) [6].
     rating = None
     for sel in [
         "span[data-hook='rating-out-of-text']",
@@ -146,8 +155,7 @@ def parse_pdp_metrics(html):
         if el and el.get_text(strip=True):
             rating = el.get_text(strip=True)
             break
-
-    # Review count candidates [5]
+    # Review count (common selectors) [6].
     reviews = None
     for sel in [
         "#acrCustomerReviewText",
@@ -157,55 +165,76 @@ def parse_pdp_metrics(html):
         if el and el.get_text(strip=True):
             reviews = el.get_text(strip=True)
             break
-
-    # BSR via bullets/tables [5]
+    # BSR [6].
     bsr_text = parse_bsr_from_soup(soup)
-    return {"price": price, "rating": rating, "review_count": reviews, "bsr": bsr_text}  # structured PDP metrics [5]
+    return {"price": price, "rating": rating, "review_count": reviews, "bsr": bsr_text}  # structured PDP metrics [6]
 
 def fetch_pdp(sess, domain, asin):
     url = f"{domain}/dp/{asin}"
-    html = get_html(sess, url)
+    html = get_html(sess, url, referer=f"{domain}/", max_retries=3)  # PDP referer improves acceptance [2]
     if not html:
-        logger.error(f"PDP fetch failed: {url}")
-        return {"price": None, "rating": None, "review_count": None, "bsr": None, "url": url}  # fallback on error [12]
+        logger.error(f"PDP fetch failed (empty/blocked): {url}")
+        return {"price": None, "rating": None, "review_count": None, "bsr": None, "url": url}  # fallback [2]
     metrics = parse_pdp_metrics(html)
     metrics["url"] = url
     logger.info(f"PDP {asin}: price={metrics['price']} rating={metrics['rating']} reviews={metrics['review_count']}")
-    return metrics  # one PDP fetch per unique ASIN [5]
+    return metrics  # one PDP fetch per ASIN [6]
 
 # ----------------------------
 # Search parsing (rank by keyword)
 # ----------------------------
-def parse_search_asins(html):
-    # Parse result tiles by data-asin on s-search-result cards (stable rank anchor) [1]
-    soup = BeautifulSoup(html, "html.parser")
-    cards = soup.select("div.s-main-slot div.s-search-result[data-asin], div.s-search-results div.s-search-result[data-asin]")
-    data_asins = []
-    for c in cards:
-        a = (c.get("data-asin") or "").strip()
-        if a:
-            data_asins.append(a)
-    return data_asins  # ordered list of ASINs for the page [1]
+def parse_search_asins_html(soup):
+    # Preferred: real tiles with component type; filter non-empty ASINs for rank order [3].
+    cards = soup.select("div[data-component-type='s-search-result'][data-asin]")
+    asins = [c.get("data-asin", "").strip() for c in cards if c.get("data-asin")]
+    if asins:
+        return asins  # direct server-rendered tile list [3]
+    # Alternative containers seen across layouts [3].
+    cards_alt = soup.select("div.s-main-slot div.s-search-result[data-asin], div.s-search-results div.s-search-result[data-asin]")
+    asins_alt = [c.get("data-asin", "").strip() for c in cards_alt if c.get("data-asin")]
+    return asins_alt  # may still be empty on some blocked/variant pages [3]
 
-def find_rank_for_asin(sess, domain, keyword, asin, max_pages=5, sleep_range=(0.8, 1.6)):
+def parse_search_asins_regex(html):
+    # Fallback 1: attribute scan to recover ASINs when classes shift [3].
+    # Keeps order as they appear in the markup.
+    asins = []
+    for m in re.finditer(r'data-asin="([A-Z0-9]{10})"', html):
+        a = m.group(1)
+        if a not in asins:
+            asins.append(a)
+    if asins:
+        return asins  # regex attribute fallback [3]
+    # Fallback 2: JSON fragments some layouts embed (e.g., "asin":"B0...") [1].
+    asins_json = []
+    for m in re.finditer(r'["\']asin["\']\s*:\s*["\']([A-Z0-9]{10})["\']', html):
+        a = m.group(1)
+        if a not in asins_json:
+            asins_json.append(a)
+    return asins_json  # JSON fallback when HTML structure is atypical [1]
+
+def find_rank_for_asin(sess, domain, keyword, asin, max_pages=5, sleep_range=(0.8, 1.4)):
     abs_index = 0
     enc_kw = quote_plus(keyword)
     for page in range(1, max_pages + 1):
-        url = f"{domain}/s?k={enc_kw}&page={page}"
-        html = get_html(sess, url)
+        url = f"{domain}/s?k={enc_kw}&page={page}&ref=sr_pg_{page}"
+        referer = f"{domain}/s?k={enc_kw}&ref=nb_sb_noss"
+        html = get_html(sess, url, referer=referer, max_retries=3)  # referer and retries help reduce empty pages [2]
         if not html:
-            logger.warning(f"Search fetch failed p{page} for '{keyword}'")
-            continue  # retry next page [21]
-        tiles = parse_search_asins(html)
+            logger.warning(f"Search fetch failed (empty/blocked) p{page} for '{keyword}'")
+            continue  # try next page [1]
+        soup = BeautifulSoup(html, "html.parser")
+        tiles = parse_search_asins_html(soup)
+        if not tiles:
+            tiles = parse_search_asins_regex(html)  # regex fallback recovers ASINs when classes shift [3]
         logger.info(f"Search '{keyword}' p{page}: tiles={len(tiles)} first10={tiles[:10]}")
         for idx, a in enumerate(tiles, start=1):
             abs_index += 1
             if a == asin:
                 logger.info(f"FOUND {asin} page={page} pos={idx} abs={abs_index}")
-                return {"page": page, "position": idx, "absolute": abs_index}  # rank info [21]
-        time.sleep(random.uniform(*sleep_range))
+                return {"page": page, "position": idx, "absolute": abs_index}  # rank detail [1]
+        time.sleep(random.uniform(*sleep_range))  # jitter between pages [7]
     logger.info(f"NOT FOUND {asin} within {max_pages} pages for '{keyword}'")
-    return None  # not found within bounds [21]
+    return None  # continue pipeline even if one ASIN is missing [1]
 
 # ----------------------------
 # Email
@@ -225,7 +254,7 @@ def send_email(email_cfg, csv_file, subject="Daily Amazon ASIN Tracking Report")
         server.starttls(context=context)
         server.login(email_cfg["from"], email_cfg["password"])
         server.sendmail(email_cfg["from"], to_list, msg.as_string())
-    logger.info("Email sent successfully")  # standard SMTP flow with TLS [20]
+    logger.info("Email sent successfully")  # standard SMTP TLS flow [8]
 
 # ----------------------------
 # Main
@@ -242,8 +271,7 @@ def main():
     proxy = random.choice(proxies) if proxies else None
     headers = BASE_HEADERS.copy()
     if ua_list:
-        headers["User-Agent"] = random.choice(ua_list)  # optional UA rotation [12]
-
+        headers["User-Agent"] = random.choice(ua_list)  # optional UA rotation for resilience [2]
     logger.info(f"Domain={domain} Proxy={proxy} UA={headers['User-Agent']}")
 
     sess = make_session(headers=headers, proxy=proxy)
@@ -253,7 +281,7 @@ def main():
     asin_metrics = {}
     for a in unique_asins:
         asin_metrics[a] = fetch_pdp(sess, domain, a)
-        time.sleep(random.uniform(0.6, 1.2))  # jitter to reduce blocks [15]
+        time.sleep(random.uniform(0.6, 1.1))  # jitter to reduce rate-based blocks [7]
 
     # Search ranks per keyword–ASIN
     rows = []
@@ -275,21 +303,20 @@ def main():
                 "rank_absolute": rank["absolute"] if rank else None,
                 "product_url": base.get("url"),
             })
-            time.sleep(random.uniform(0.6, 1.2))  # jitter [15]
+            time.sleep(random.uniform(0.6, 1.1))  # jitter [7]
 
-    # Save CSV
+    # Save CSV next to this script
     out = os.path.join(BASE_DIR, f"daily_amazon_tracking_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}.csv")
     try:
         import pandas as pd
         pd.DataFrame(rows).to_csv(out, index=False)
     except Exception:
-        # Minimal CSV writer fallback
         with open(out, "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
             w.writerow(["timestamp","keyword","asin","price","rating","review_count","bsr","rank_page","rank_position","rank_absolute","product_url"])
             for r in rows:
                 w.writerow([r.get(k) for k in ["timestamp","keyword","asin","price","rating","review_count","bsr","rank_page","rank_position","rank_absolute","product_url"]])
-    logger.info(f"Wrote CSV: {out}")  # file next to this script [21]
+    logger.info(f"Wrote CSV: {out}")  # output file path for pull/cron pipelines [1]
 
     # Optional email via tracking.email
     if "email" in tracking:
