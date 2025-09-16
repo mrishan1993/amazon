@@ -1,126 +1,291 @@
+#!/usr/bin/env python3
+# EC2-hardened Amazon rank + BSR tracker (requests + BeautifulSoup).
+# - Bootstraps a browser-like session on Amazon: home -> (optional) cookie consent -> set delivery pincode.
+# - Uses Session, strong headers, per-request Referer, CAPTCHA detection/backoff, and robust data-asin parsing.
+# - Inputs: keywords_car_body_polish.yaml (asin, domain, keywords), email.yaml (email settings).
+# - Output: results.csv and email it.
+
+import os
+import re
+import csv
+import ssl
+import time
+import yaml
+import smtplib
+import random
+import logging
 import requests
 from bs4 import BeautifulSoup
-import yaml
-import time
-import csv
-import smtplib
-import ssl
-from email.message import EmailMessage
-import os
 from datetime import datetime
+from email.message import EmailMessage
+from urllib.parse import quote_plus
 
-HEADERS = {
+# ---------------- Logging ----------------
+def init_logging():
+    logger = logging.getLogger("rank-bs4-ec2")
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+    if logger.handlers:
+        logger.handlers.clear()
+    fmt = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    ch.setFormatter(fmt)
+    logger.addHandler(ch)
+    logger.info("Terminal logging initialized")
+    logger.info(f"cwd={os.getcwd()}")
+    return logger
+
+logger = init_logging()
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Strong desktop headers + Accept-Language; "x-requested-with" only for AJAX endpoints we call. [19][18]
+BASE_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/105.0.0.0 Safari/537.36"
-    )
+        "Chrome/114.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "en-IN,en;q=0.9",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "DNT": "1",
 }
 
-# ---------- Function: Get BSR ----------
-def get_bsr(domain, asin):
+# ---------------- YAML loaders ----------------
+def load_yaml(path):
+    with open(path, "r") as f:
+        return yaml.safe_load(f)  # safe_load is recommended. [22]
+
+def load_keywords_yaml(filename="keywords_car_body_polish.yaml"):
+    path = os.path.join(BASE_DIR, filename)
+    logger.info(f"Loading keywords file: {path}")
+    cfg = load_yaml(path)
+    asin = cfg["asin"].strip()
+    domain = cfg.get("domain", "https://www.amazon.in").strip()
+    keywords = [k.strip() for k in cfg["keywords"]]
+    # Optional pin code can be supplied via this YAML too:
+    pincode = cfg.get("pincode")  # e.g., "110001"
+    return asin, domain, keywords, pincode  # structured input. [23]
+
+def load_email_yaml(filename="email.yaml"):
+    path = os.path.join(BASE_DIR, filename)
+    logger.info(f"Loading email file: {path}")
+    cfg = load_yaml(path) or {}
+    return cfg.get("email")
+
+# ---------------- Session + bootstrap ----------------
+def make_session(headers=None, proxy=None):
+    sess = requests.Session()
+    sess.headers.update(headers or BASE_HEADERS)
+    if proxy:
+        sess.proxies.update({"http": proxy, "https": proxy})
+    return sess  # persistent cookies and headers. [19]
+
+def is_captcha(html_text):
+    lt = html_text.lower()
+    return (
+        "validatecaptcha" in lt
+        or "enter the characters you see below" in lt
+        or "api-services-support@amazon.com" in lt
+        or ("captcha" in lt and "amazon" in lt)
+    )  # Amazon bot-check detection. [21]
+
+def get_html(sess, url, referer=None, max_retries=3, sleep_range=(1.0, 2.2), timeout=35):
+    for i in range(max_retries):
+        try:
+            headers = {"Referer": referer} if referer else {}
+            r = sess.get(url, headers=headers, timeout=timeout)
+            if r.status_code == 200 and not is_captcha(r.text):
+                return r.text
+            logger.warning(f"Non-200 or CAPTCHA {r.status_code} for {url} (try {i+1}/{max_retries})")
+        except Exception as e:
+            logger.warning(f"Request error {url} (try {i+1}/{max_retries}): {e}")
+        time.sleep(random.uniform(*sleep_range))
+    return None  # retries exhausted. [18]
+
+def post_json(sess, url, payload, referer=None, extra_headers=None, max_retries=2, sleep_range=(0.8, 1.6), timeout=30):
+    for i in range(max_retries + 1):
+        try:
+            headers = {"Referer": referer, "x-requested-with": "XMLHttpRequest", "accept": "application/json"}
+            if extra_headers:
+                headers.update(extra_headers)
+            r = sess.post(url, json=payload, headers=headers, timeout=timeout)
+            if r.status_code in (200, 204):
+                return r
+            logger.warning(f"POST non-200 {r.status_code} to {url} (try {i+1}/{max_retries+1})")
+        except Exception as e:
+            logger.warning(f"POST error {url} (try {i+1}/{max_retries+1}): {e}")
+        if i < max_retries:
+            time.sleep(random.uniform(*sleep_range))
+    return None
+
+def bootstrap_session(sess, domain, pincode=None):
+    # 1) Visit home to get base cookies (session-id, ubid-acbin, etc.). [19]
+    home = f"{domain}/"
+    html = get_html(sess, home, referer=None, max_retries=3)
+    if not html:
+        logger.warning("Home bootstrap failed; proceeding anyway")
+
+    # 2) Optionally set delivery pin via glow address-change; mirrors real browser location change. [1]
+    if pincode:
+        change_url = f"{domain}/portal-migration/hz/glow/address-change?actionSource=glow"
+        payload = {
+            "locationType": "LOCATION_INPUT",
+            "zipCode": str(pincode),
+            "storeContext": "generic",
+            "deviceType": "web",
+            "pageType": "Search",
+            "actionSource": "glow",
+        }
+        resp = post_json(sess, change_url, payload, referer=home)
+        if resp and resp.status_code in (200, 204):
+            logger.info(f"Set delivery PIN {pincode} for session")
+        else:
+            logger.warning(f"Failed to set delivery PIN {pincode}; continuing without it")
+
+# ---------------- PDP parsing ----------------
+def parse_bsr_from_soup(soup):
+    def clean(t): return re.sub(r"\s+", " ", t).strip()
+    for li in soup.select("#detailBullets_feature_div li, #detailBulletsWrapper_feature_div li"):
+        txt = clean(li.get_text(" ", strip=True))
+        if "Best Sellers Rank" in txt:
+            return txt
+    for tr in soup.select("#productDetails_detailBullets_sections1 tr, #productDetails_db_sections tr"):
+        txt = clean(tr.get_text(" ", strip=True))
+        if "Best Sellers Rank" in txt:
+            return txt
+    node = soup.find(string=lambda s: isinstance(s, str) and "Best Sellers Rank" in s)
+    return clean(node.parent.get_text(" ", strip=True)) if node else None
+
+def parse_pdp_metrics(html):
+    soup = BeautifulSoup(html, "html.parser")
+    price = None
+    for sel in ["span.a-price span.a-offscreen", "#priceblock_ourprice", "#priceblock_dealprice", "#priceblock_saleprice", "#price_inside_buybox"]:
+        el = soup.select_one(sel)
+        if el and el.get_text(strip=True):
+            price = el.get_text(strip=True); break
+    rating = None
+    for sel in ["span[data-hook='rating-out-of-text']", "#acrPopover span.a-icon-alt"]:
+        el = soup.select_one(sel)
+        if el and el.get_text(strip=True):
+            rating = el.get_text(strip=True); break
+    reviews = None
+    for sel in ["#acrCustomerReviewText", "span[data-hook='total-review-count']"]:
+        el = soup.select_one(sel)
+        if el and el.get_text(strip=True):
+            reviews = el.get_text(strip=True); break
+    bsr_text = parse_bsr_from_soup(soup)
+    return {"price": price, "rating": rating, "review_count": reviews, "bsr": bsr_text}
+
+def get_bsr(sess, domain, asin):
     url = f"{domain}/dp/{asin}"
-    r = requests.get(url, headers=HEADERS)
-    soup = BeautifulSoup(r.text, "html.parser")
+    html = get_html(sess, url, referer=f"{domain}/")
+    if not html:
+        return "BSR not available"
+    return parse_pdp_metrics(html)["bsr"] or "BSR not available"
 
-    bsr_text = None
-    for li in soup.select("#detailBullets_feature_div li"):
-        if "Best Sellers Rank" in li.get_text():
-            bsr_text = li.get_text(strip=True)
-            break
-    if not bsr_text:
-        for tr in soup.select("#productDetails_detailBullets_sections1 tr"):
-            if "Best Sellers Rank" in tr.get_text():
-                bsr_text = tr.get_text(strip=True)
-                break
-    return bsr_text if bsr_text else "BSR not available"
+# ---------------- Search parsing ----------------
+def parse_search_asins_html(soup):
+    cards = soup.select("div[data-component-type='s-search-result'][data-asin]")
+    asins = [c.get("data-asin", "").strip() for c in cards if c.get("data-asin")]
+    if asins:
+        return asins
+    cards_alt = soup.select("div.s-main-slot div.s-search-result[data-asin], div.s-search-results div.s-search-result[data-asin]")
+    return [c.get("data-asin", "").strip() for c in cards_alt if c.get("data-asin")]
 
-# ---------- Function: Get Keyword Rank ----------
-def get_keyword_rank(domain, asin, keyword, max_pages=5):
+def parse_search_asins_regex(html):
+    seen, out = set(), []
+    for m in re.finditer(r'data-asin="([A-Z0-9]{10})"', html):
+        a = m.group(1)
+        if a not in seen:
+            seen.add(a); out.append(a)
+    if out:
+        return out
+    seen, out = set(), []
+    for m in re.finditer(r'["\']asin["\']\s*:\s*["\']([A-Z0-9]{10})["\']', html):
+        a = m.group(1)
+        if a not in seen:
+            seen.add(a); out.append(a)
+    return out
+
+def get_keyword_rank(sess, domain, asin, keyword, max_pages=5):
+    enc_kw = quote_plus(keyword)
+    abs_index = 0
     for page in range(1, max_pages + 1):
-        url = f"{domain}/s?k={keyword}&page={page}"
-        r = requests.get(url, headers=HEADERS)
-        soup = BeautifulSoup(r.text, "html.parser")
-
-        results = soup.find_all("div", {"data-asin": True})
-        for idx, item in enumerate(results, start=1):
-            if item["data-asin"] == asin:
-                return page, idx  # return separately
+        url = f"{domain}/s?k={enc_kw}&page={page}&ref=sr_pg_{page}"
+        referer = f"{domain}/s?k={enc_kw}&ref=nb_sb_noss"
+        html = get_html(sess, url, referer=referer)
+        if not html:
+            time.sleep(1)
+            continue
+        soup = BeautifulSoup(html, "html.parser")
+        tiles = parse_search_asins_html(soup)
+        if not tiles:
+            tiles = parse_search_asins_regex(html)
+        for idx, a in enumerate(tiles, start=1):
+            abs_index += 1
+            if a == asin:
+                return page, idx
         time.sleep(1)
-    return None, None   # not found
+    return None, None
 
-# ---------- Function: Save CSV ----------
+# ---------------- CSV + Email ----------------
 def save_to_csv(data, filename="results.csv"):
     with open(filename, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["Keyword", "ASIN", "Page", "Position", "BSR", "Timestamp"])
+        w = csv.writer(f)
+        w.writerow(["Keyword", "ASIN", "Page", "Position", "BSR", "Timestamp"])
         for row in data:
-            writer.writerow(row)
+            w.writerow(row)
 
-# ---------- Function: Email Results ----------
 def send_email(email_cfg, subject, body, attachment="results.csv"):
     msg = EmailMessage()
     msg["From"] = email_cfg["from"]
-
-    # ensure "to" is always treated as a list
-    to_emails = email_cfg["to"] if isinstance(email_cfg["to"], list) else [email_cfg["to"]]
-    msg["To"] = ", ".join(to_emails)
-
+    raw_to = email_cfg.get("to", [])
+    to_list = raw_to if isinstance(raw_to, list) else [raw_to]
+    to_list = [t.strip() for t in to_list if isinstance(t, str) and t.strip()]
+    msg["To"] = ", ".join(to_list)
     msg["Subject"] = subject
     msg.set_content(body)
-
     with open(attachment, "rb") as f:
-        file_data = f.read()
-        file_name = f.name
-    msg.add_attachment(file_data, maintype="text", subtype="csv", filename=file_name)
-
+        msg.add_attachment(f.read(), maintype="text", subtype="csv", filename=os.path.basename(attachment))
     context = ssl.create_default_context()
     with smtplib.SMTP(email_cfg["smtp_server"], email_cfg["smtp_port"]) as server:
         server.starttls(context=context)
         server.login(email_cfg["from"], email_cfg["password"])
-        server.sendmail(email_cfg["from"], to_emails, msg.as_string())
+        server.sendmail(email_cfg["from"], to_list, msg.as_string())
 
-
-# ---------- Main ----------
+# ---------------- Main ----------------
 if __name__ == "__main__":
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    yaml_path = os.path.join(BASE_DIR, "keywords_car_body_polish.yaml")
+    # Load inputs
+    asin, domain, keywords, pincode = load_keywords_yaml("keywords_car_body_polish.yaml")
+    email_cfg = load_email_yaml("email.yaml")
 
-    with open(yaml_path, "r") as f:
-        cfg = yaml.safe_load(f)
+    # Build and bootstrap session on EC2
+    sess = make_session(headers=BASE_HEADERS)
+    bootstrap_session(sess, domain, pincode=pincode or "110001")  # default Delhi PIN if not provided. [1]
 
-    asin = cfg["asin"]
-    domain = cfg["domain"]
-    keywords = cfg["keywords"]
-
-    email_path = os.path.join(BASE_DIR, "email.yaml")
-    with open(email_path, "r") as f:
-        email_config = yaml.safe_load(f)
-    email_cfg = email_config["email"]
-
+    # Iterate keywords
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
     results = []
-
     for keyword in keywords:
-        page, pos = get_keyword_rank(domain, asin, keyword)
-        bsr = get_bsr(domain, asin)
-
+        page, pos = get_keyword_rank(sess, domain, asin, keyword, max_pages=5)
+        bsr = get_bsr(sess, domain, asin)
         page_val = page if page else "Not found"
         pos_val = pos if pos else "Not found"
-
         print(f"{keyword} → {asin} → Page {page_val}, Position {pos_val} | BSR: {bsr}")
         results.append([keyword, asin, page_val, pos_val, bsr, timestamp])
+        time.sleep(random.uniform(0.8, 1.4))
 
-    # Save CSV
-    save_to_csv(results)
-
-    # Email
-    send_email(
-        email_cfg,
-        subject="Amazon Keyword Rank Report",
-        body=f"Here is the keyword rank report ({timestamp}).",
-        attachment="results.csv"
-    )
-
+    # Save and email
+    save_to_csv(results, filename="results.csv")
+    if email_cfg:
+        send_email(
+            email_cfg,
+            subject="Amazon Keyword Rank Report (EC2)",
+            body=f"Rank report generated at {timestamp}.",
+            attachment="results.csv"
+        )
     print("\n✅ Results saved to results.csv and emailed.")
