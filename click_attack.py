@@ -19,10 +19,9 @@ from selenium.webdriver.support import expected_conditions as EC
 CONFIG_PATH = "ctr.yaml"
 EMAIL_CONFIG_PATH = "email.yaml"
 FAILED_CSV = "failed_asins.csv"
-
 asin_fail_count = {}
 
-# ========= HELPERS =========
+# ----------------- Helpers -----------------
 def log(msg):
     ts = time.strftime("[%Y-%m-%d %H:%M:%S]")
     print(f"{ts} {msg}")
@@ -32,22 +31,8 @@ def load_config(path):
     with open(path, "r") as f:
         return yaml.safe_load(f)
 
-def get_driver(headless=True, proxy=None):
-    options = Options()
-    # Minimal resource headless Chrome
-    if headless:
-        options.add_argument("--headless=new")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--single-process")
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--window-size=1200,800")
-    if proxy:
-        options.add_argument(f"--proxy-server={proxy}")
-    return webdriver.Chrome(service=Service(), options=options)
-
 def ensure_csv(path):
+    """Create CSV with header if not exists."""
     try:
         with open(path, "x", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
@@ -80,7 +65,26 @@ def send_email_with_attachment(subject, body, filepath):
     except Exception as e:
         log(f"⚠️ Failed to send email: {e}")
 
-# ========= CORE =========
+# ----------------- Chrome Driver -----------------
+def get_driver(headless=True, proxy=None):
+    options = Options()
+    if headless:
+        options.add_argument("--headless")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-background-networking")
+    options.add_argument("--disable-background-timer-throttling")
+    options.add_argument("--single-process")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    if proxy:
+        options.add_argument(f"--proxy-server={proxy}")
+
+    service = Service()  # assumes chromedriver is in PATH
+    return webdriver.Chrome(service=service, options=options)
+
+# ----------------- Core Actions -----------------
 def record_failed_asin(asin, keyword, note):
     ensure_csv(FAILED_CSV)
     with open(FAILED_CSV, "a", newline="", encoding="utf-8") as f:
@@ -91,25 +95,29 @@ def record_failed_asin(asin, keyword, note):
 def click_asin(driver, keyword, asin, attempts=3):
     for attempt in range(1, attempts + 1):
         try:
-            elem = WebDriverWait(driver, 8).until(
-                EC.presence_of_element_located((By.XPATH, f"//a[contains(@href,'/dp/{asin}')]"))
+            elem = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, f"//a[@href and contains(@href,'/dp/{asin}')]"))
             )
             driver.execute_script("arguments[0].removeAttribute('target')", elem)
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", elem)
-            time.sleep(random.uniform(0.3, 0.8))
+            time.sleep(0.5)
             before_tabs = driver.window_handles
             elem.click()
+            log(f"✅ Clicked ASIN {asin} (attempt {attempt})")
+
             after_tabs = driver.window_handles
             if len(after_tabs) > len(before_tabs):
                 new_tab = [t for t in after_tabs if t not in before_tabs][0]
                 driver.switch_to.window(new_tab)
                 driver.close()
                 driver.switch_to.window(before_tabs[0])
+                log(f"🗑 Closed extra tab for ASIN {asin}")
+
             asin_fail_count[asin] = 0
             return True
         except Exception as e:
-            log(f"❌ Could not click ASIN {asin} (attempt {attempt}): {e}")
-            time.sleep(random.uniform(1, 2))
+            log(f"❌ Click failed for ASIN {asin} (attempt {attempt}): {e}")
+            time.sleep(2)
 
     asin_fail_count[asin] = asin_fail_count.get(asin, 0) + 1
     if asin_fail_count[asin] >= 10:
@@ -125,53 +133,57 @@ def perform_degrade(driver, keyword, asin_list):
 
     for asin in asin_list:
         if not click_asin(driver, keyword, asin):
-            log(f"⚠ SKIPPING ASIN {asin} (click failed)")
+            log(f"⚠ SKIPPING ASIN {asin}")
             continue
-        stay_time = random.uniform(2, 5)
-        log(f"↩️ Staying {stay_time:.1f}s on ASIN {asin}")
-        time.sleep(stay_time)
+        time.sleep(random.uniform(2, 5))  # stay on product page
         try:
             driver.back()
-            WebDriverWait(driver, 8).until(
+            WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.ID, "twotabsearchtextbox"))
             )
             time.sleep(random.uniform(1, 3))
         except:
-            log("⚠ Could not navigate back, reloading search page")
+            log("⚠ Could not go back, reloading search page")
             driver.get(search_url)
             time.sleep(random.uniform(2, 4))
 
-# ========= MAIN LOOP =========
+# ----------------- Main Loop -----------------
 def main():
+    driver = None
     while True:
-        driver = None
         try:
+            if driver is None:
+                config = load_config(CONFIG_PATH)
+                proxies = config.get("proxies", [])
+                proxy = random.choice(proxies) if proxies else None
+                log("🌐 Using proxy: " + (proxy or "None"))
+                driver = get_driver(headless=True, proxy=proxy)
+
             config = load_config(CONFIG_PATH)
             asin_map = config.get("asin_map", {})
             if not asin_map:
-                log("❌ No asin_map found in config")
+                log("❌ No asin_map found in config, retrying in 30s")
                 time.sleep(30)
                 continue
 
-            proxies = config.get("proxies", [])
-            proxy = random.choice(proxies) if proxies else None
-            log("🌐 Using proxy: " + (proxy or "None"))
-
-            driver = get_driver(headless=True, proxy=proxy)
-
             for keyword, asin_list in asin_map.items():
-                perform_degrade(driver, keyword, asin_list)
-
-            driver.quit()
-            log("🔒 Driver closed, restarting loop")
-            time.sleep(random.uniform(5, 10))
+                try:
+                    perform_degrade(driver, keyword, asin_list)
+                except Exception as e:
+                    log(f"💥 Error during degrade for {keyword}: {e}")
+                    traceback.print_exc()
+                    try: driver.quit()
+                    except: pass
+                    driver = None
+                    break  # restart loop to recreate driver
 
         except Exception as e:
-            log("💥 CRASH: " + str(e))
+            log(f"💥 MAIN LOOP CRASH: {e}")
             traceback.print_exc()
-            if driver:
-                try: driver.quit()
-                except: pass
+            try: driver.quit()
+            except: pass
+            driver = None
+            log("🔄 Restarting main loop in 10s...")
             time.sleep(10)
 
 if __name__ == "__main__":
