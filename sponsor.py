@@ -164,11 +164,13 @@ def click_sponsored(driver, keyword):
                     title = ""
 
             title_l = title.lower() if title else ""
+             # 🚫 Skip any competitor ASINs you want excluded
+            blocked_asins = {"B0FG1R4Q6D", "B0FGVCGTWV", "B0F7FQSS12"}
 
             if "chamak" in title_l:
                 log(f"⛔ Skipping asin {asin} because title contains 'chamak'")
                 continue
-            if asin.strip() == "B0F7FQSS12":
+            if asin.strip() in blocked_asins:
                 log(f"⛔ Skipping blocked ASIN {asin}")
                 continue
 
@@ -237,7 +239,7 @@ def click_sponsored(driver, keyword):
                 asin = ""
             asin_fail_count[asin] = asin_fail_count.get(asin, 0) + 1
             if asin and asin_fail_count[asin] >= 10:
-                record_failed_asin(asin, keyword, "10 consecutive failures")
+                # record_failed_asin(asin, keyword, "10 consecutive failures")
                 asin_fail_count[asin] = 0
             continue
 
@@ -249,7 +251,7 @@ def main():
     while True:
         driver = None
         try:
-            driver = get_driver(headless=HEADLESS)
+            driver = get_driver(headless=True)
             for keyword in keywords:
                 click_sponsored(driver, keyword)
                 # pause between keywords
