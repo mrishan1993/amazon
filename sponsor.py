@@ -146,7 +146,7 @@ def click_sponsored(driver, keyword):
 
     if not tiles:
         log("⚠ No sponsored tiles found — saving debug snapshot.")
-        save_debug_snapshot(driver, keyword)
+        # save_debug_snapshot(driver, keyword)
         return
 
     for idx, tile in enumerate(tiles, start=1):
