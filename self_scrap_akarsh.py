@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # EC2-hardened Amazon rank + BSR tracker (requests + BeautifulSoup)
-# Supports multiple ASINs with individual keywords and optional pincode
-# Inputs: keywords_multi_asin.yaml, email.yaml
+# Supports multiple ASINs with individual keywords
+# Inputs: asins_keywords.yaml, email.yaml
 # Output: results.csv and email
 
 import os
@@ -57,16 +57,24 @@ def load_yaml(path):
     with open(path, "r") as f:
         return yaml.safe_load(f)
 
-def load_keywords_yaml(filename="keywords_multi_asin.yaml"):
+def load_keywords_yaml(filename="asins_keywords.yaml"):
     path = os.path.join(BASE_DIR, filename)
-    logger.info(f"Loading keywords file: {path}")
+    logger.info(f"Loading ASINs file: {path}")
     cfg_list = load_yaml(path)
+
+    out = []
     for entry in cfg_list:
-        entry["asin"] = entry["asin"].strip()
-        entry["domain"] = entry.get("domain", "https://www.amazon.in").strip()
-        entry["keywords"] = [k.strip() for k in entry.get("keywords", [])]
-        entry["pincode"] = entry.get("pincode")  # optional
-    return cfg_list
+        asin = entry.get("asin", "").strip()
+        kws = entry.get("keywords", [])
+        if not asin or not isinstance(kws, list):
+            continue
+        out.append({
+            "asin": asin,
+            "domain": "https://www.amazon.in",
+            "keywords": [k.strip() for k in kws if k.strip()],
+            "pincode": None
+        })
+    return out
 
 def load_email_yaml(filename="email.yaml"):
     path = os.path.join(BASE_DIR, filename)
@@ -183,12 +191,26 @@ def get_bsr(sess, domain, asin):
 
 # ---------------- Search parsing ----------------
 def parse_search_asins_html(soup):
+    # Extract ASINs from all possible containers
     cards = soup.select("div[data-component-type='s-search-result'][data-asin]")
     asins = [c.get("data-asin", "").strip() for c in cards if c.get("data-asin")]
     if asins:
         return asins
+
     cards_alt = soup.select("div.s-main-slot div.s-search-result[data-asin], div.s-search-results div.s-search-result[data-asin]")
-    return [c.get("data-asin", "").strip() for c in cards_alt if c.get("data-asin")]
+    asins = [c.get("data-asin", "").strip() for c in cards_alt if c.get("data-asin")]
+    if asins:
+        return asins
+
+    # Fallback: parse JSON embedded in page
+    html = str(soup)
+    seen, out = set(), []
+    for m in re.finditer(r'["\']asin["\']\s*:\s*["\']([A-Z0-9]{10})["\']', html):
+        a = m.group(1)
+        if a not in seen:
+            seen.add(a)
+            out.append(a)
+    return out
 
 def parse_search_asins_regex(html):
     seen, out = set(), []
@@ -196,15 +218,9 @@ def parse_search_asins_regex(html):
         a = m.group(1)
         if a not in seen:
             seen.add(a); out.append(a)
-    if out: return out
-    seen, out = set(), []
-    for m in re.finditer(r'["\']asin["\']\s*:\s*["\']([A-Z0-9]{10})["\']', html):
-        a = m.group(1)
-        if a not in seen:
-            seen.add(a); out.append(a)
     return out
 
-def get_keyword_rank(sess, domain, asin, keyword, max_pages=5):
+def get_keyword_rank(sess, domain, asin, keyword, max_pages=10):
     enc_kw = quote_plus(keyword)
     abs_index = 0
     for page in range(1, max_pages + 1):
@@ -221,8 +237,8 @@ def get_keyword_rank(sess, domain, asin, keyword, max_pages=5):
         for idx, a in enumerate(tiles, start=1):
             abs_index += 1
             if a == asin:
-                return page, idx
-        time.sleep(1)
+                return page, abs_index
+        time.sleep(random.uniform(1.0, 2.0))
     return None, None
 
 # ---------------- CSV + Email ----------------
@@ -252,7 +268,7 @@ def send_email(email_cfg, subject, body, attachment="results.csv"):
 
 # ---------------- Main ----------------
 if __name__ == "__main__":
-    asin_entries = load_keywords_yaml("keywords_multi_asin.yaml")
+    asin_entries = load_keywords_yaml("asins_keywords.yaml")
     email_cfg = load_email_yaml("email.yaml")
 
     sess = make_session(headers=BASE_HEADERS)
@@ -269,7 +285,7 @@ if __name__ == "__main__":
         bootstrap_session(sess, domain, pincode=pincode)
 
         for keyword in keywords:
-            page, pos = get_keyword_rank(sess, domain, asin, keyword, max_pages=5)
+            page, pos = get_keyword_rank(sess, domain, asin, keyword, max_pages=10)
             bsr = get_bsr(sess, domain, asin)
             page_val = page if page else "Not found"
             pos_val = pos if pos else "Not found"
@@ -277,7 +293,7 @@ if __name__ == "__main__":
             results.append([keyword, asin, page_val, pos_val, bsr, timestamp])
             time.sleep(random.uniform(0.8, 1.4))
 
-    save_to_csv(results, filename="results.csv")
+    save_to_csv(results, filename="results_akarsh.csv")
 
     if email_cfg:
         send_email(
