@@ -6,16 +6,20 @@ import re
 import csv
 import smtplib
 from email.message import EmailMessage
+import os
 
 # -------------------------
 # Load YAML files
 # -------------------------
-with open("track_akarsh.yaml", "r", encoding="utf-8") as f:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+yaml_path = os.path.join(BASE_DIR, "track_akarsh.yaml")
+email_path = os.path.join(BASE_DIR, "email.yaml")
+with open(yaml_path, "r", encoding="utf-8") as f:
     data = yaml.safe_load(f)
 
 keywords_asins = data.get("tracking", {}).get("keywords_asins", {})
 
-with open("email.yaml", "r", encoding="utf-8") as f:
+with open(email_path, "r", encoding="utf-8") as f:
     email_config = yaml.safe_load(f).get("email", {})
 
 # -------------------------
