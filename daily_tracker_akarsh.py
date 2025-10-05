@@ -70,7 +70,7 @@ def load_track_config(path="track_akarsh.yaml"):
     logger.info(f"Loading track config: {path_abs}")
     return load_yaml(path_abs)  # expects top-level "tracking" with "keywords_asins" [1][2]
 
-def load_email_config(path="email.yaml"):
+def load_email_config(path="email_akarsh.yaml"):
     path_abs = path if os.path.isabs(path) else os.path.join(BASE_DIR, path)
     logger.info(f"Loading email config: {path_abs}")
     cfg = load_yaml(path_abs)

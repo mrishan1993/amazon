@@ -76,7 +76,7 @@ def load_keywords_yaml(filename="asins_keywords.yaml"):
         })
     return out
 
-def load_email_yaml(filename="email.yaml"):
+def load_email_yaml(filename="email_akarsh.yaml"):
     path = os.path.join(BASE_DIR, filename)
     logger.info(f"Loading email file: {path}")
     cfg = load_yaml(path) or {}

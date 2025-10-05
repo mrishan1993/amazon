@@ -13,7 +13,7 @@ import os
 # -------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 yaml_path = os.path.join(BASE_DIR, "track_akarsh.yaml")
-email_path = os.path.join(BASE_DIR, "email.yaml")
+email_path = os.path.join(BASE_DIR, "email_akarsh.yaml")
 with open(yaml_path, "r", encoding="utf-8") as f:
     data = yaml.safe_load(f)
 
