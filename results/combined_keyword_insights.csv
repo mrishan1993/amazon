@@ -1,0 +1,282 @@
+keyword,total_mentions,asin_count,avg_sentiment,avg_star_rating,effectiveness_score,suggestion,notes,used_in_asins
+you,64,10,0.0,4.0,8.06,Add to title,"Strong signal, widely used","B00MHQ8JKS, B00MHP9DA4, B0C77HQZ17, B0F4ZFLD75, B0F43LVQDM, B00RLK8UXG, B00XCCPOC2, B00TC5IA2E, B00MINEUEO, B0B68MLDZX"
+this,20,10,0.0,4.0,6.3,Add to bullets,Moderate strength keyword,"B00MHQ8JKS, B00MHP9DA4, B075L95WPQ, B089Z96M1T, B00RLK8UXG, B00XCCPOC2, B00TC5IHI6, B00TC5IA2E, B00ZFS87LQ, B00MINEUEO"
+this product,17,8,0.0,4.0,5.88,Add to bullets,Moderate strength keyword,"B00MHQ8JKS, B089Z96M1T, B08X1SX524, B0F4ZFLD75, B00RLK8UXG, B00TC5IHI6, B00XCCPOC2, B0B68MLDZX"
+money,13,9,0.0,4.0,5.87,Add to bullets,Moderate strength keyword,"B00MHP9DA4, B075L95WPQ, B0C77HQZ17, B00RLK8UXG, B00TC5IHI6, B00TC5IA2E, B00ZFS87LQ, B00MINEUEO, B07QPCKGL4"
+the car,15,6,0.0,4.0,5.5,Add to bullets,Moderate strength keyword,"B00MHQ8JKS, B00MHP9DA4, B089Z96M1T, B08X1SX524, B0C77HQZ17, B07QPCKGL4"
+good product,11,7,0.0,4.0,5.49,Add to bullets,Moderate strength keyword,"B075L95WPQ, B089Z96M1T, B00RLK8UXG, B00TC5IHI6, B00S5SAFDQ, B00ZFS87LQ, B00TC5IA2E"
+which,12,6,0.0,4.0,5.38,Add to bullets,Moderate strength keyword,"B00MHQ8JKS, B00MHP9DA4, B08X1SX524, B00XCCPOC2, B00TC5IA2E, B0B68MLDZX"
+the shine,8,6,0.0,4.0,5.22,Add to bullets,Moderate strength keyword,"B08X1SX524, B0C77HQZ17, B0F4ZFLD75, B00XCCPOC2, B00MINEUEO, B07QPCKGL4"
+that,8,4,0.0,4.0,4.92,Low priority,Low usage or weak sentiment,"B00TC5IHI6, B089Z96M1T, B00MHP9DA4, B00XCCPOC2"
+product,8,4,0.0,4.0,4.92,Low priority,Low usage or weak sentiment,"B07QPCKGL4, B00MHP9DA4, B00S5SAFDQ, B00XCCPOC2"
+car,5,4,0.0,4.0,4.8,Low priority,Low usage or weak sentiment,"B00MHQ8JKS, B07QPCKGL4, B00ZFS87LQ, B075L95WPQ"
+shine,4,4,0.0,4.0,4.76,Low priority,Low usage or weak sentiment,"B00TC5IHI6, B00XCCPOC2, B00RLK8UXG, B00TC5IA2E"
+this wax,10,2,0.0,4.0,4.7,Low priority,Low usage or weak sentiment,"B00MHP9DA4, B08X1SX524"
+my car,6,3,0.0,4.0,4.69,Low priority,Low usage or weak sentiment,"B00MHQ8JKS, B00MHP9DA4, B00RLK8UXG"
+tyre,5,3,0.0,4.0,4.65,Low priority,Low usage or weak sentiment,"B0F43LVQDM, B00S5SAFDQ, B0F4ZFLD75"
+the product,5,3,0.0,4.0,4.65,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B00XCCPOC2, B075L95WPQ"
+the result,4,3,0.0,4.0,4.61,Low priority,Low usage or weak sentiment,"B00MHQ8JKS, B00XCCPOC2, B0C77HQZ17"
+the wax,7,2,0.0,4.0,4.58,Low priority,Low usage or weak sentiment,"B00MHP9DA4, B08X1SX524"
+brand,3,3,0.0,4.0,4.57,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B0C77HQZ17, B075L95WPQ"
+nice product,3,3,0.0,4.0,4.57,Low priority,Low usage or weak sentiment,"B0F43LVQDM, B0B68MLDZX, B00TC5IHI6"
+dust,3,3,0.0,4.0,4.57,Low priority,Low usage or weak sentiment,"B07QPCKGL4, B00MHP9DA4, B00TC5IA2E"
+value,3,3,0.0,4.0,4.57,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B00MINEUEO, B075L95WPQ"
+application,3,3,0.0,4.0,4.57,Low priority,Low usage or weak sentiment,"B00RLK8UXG, B07QPCKGL4, B00TC5IHI6"
+time,5,2,0.0,4.0,4.5,Low priority,Low usage or weak sentiment,"B00MHQ8JKS, B00XCCPOC2"
+the paint,4,2,0.0,4.0,4.46,Low priority,Low usage or weak sentiment,"B00RLK8UXG, B08X1SX524"
+the polish,4,2,0.0,4.0,4.46,Low priority,Low usage or weak sentiment,"B00RLK8UXG, B0C77HQZ17"
+swirl mark,4,2,0.0,4.0,4.46,Low priority,Low usage or weak sentiment,"B00RLK8UXG, B00XCCPOC2"
+your tyre,4,2,0.0,4.0,4.46,Low priority,Low usage or weak sentiment,"B00S5SAFDQ, B0C77HQZ17"
+the surface,3,2,0.0,4.0,4.42,Low priority,Low usage or weak sentiment,"B00MHQ8JKS, B00RLK8UXG"
+wax,3,2,0.0,4.0,4.42,Low priority,Low usage or weak sentiment,"B00MHP9DA4, B00XCCPOC2"
+its,3,2,0.0,4.0,4.42,Low priority,Low usage or weak sentiment,"B00MHP9DA4, B08X1SX524"
+this polish,3,2,0.0,4.0,4.42,Low priority,Low usage or weak sentiment,"B00S5SAFDQ, B0C77HQZ17"
+hand,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+the purpose,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+"after polished, my nexon's old tyres change",2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+a satisfied product,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+polished droplet,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+day,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00TC5IHI6, B0C77HQZ17"
+rain,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B0F4ZFLD75, B0C77HQZ17"
+polished surface,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+my bike tyre,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B0F43LVQDM, B0F4ZFLD75"
+dirt,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00MHQ8JKS, B0C77HQZ17"
+the manufacturer,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00TC5IHI6, B0C77HQZ17"
+least application,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+the hydrophobic,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+glove,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+bottle,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+an amazing product,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+cap,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+wavex,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+excellent result,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00MHQ8JKS, B00XCCPOC2"
+brand new look,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+the entire tyre,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+my 8-year-old thunderbird 350 tyre,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+tyre and plastic part,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+just 3–4ml,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00ZFS87LQ, B075L95WPQ"
+bike,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B07QPCKGL4, B00TC5IHI6"
+the dashboard,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B089Z96M1T, B00MINEUEO"
+a bit,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00MHQ8JKS, B0F4ZFLD75"
+what,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B089Z96M1T, B00TC5IHI6"
+polish,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B00TC5IHI6, B00S5SAFDQ"
+stain,2,2,0.0,4.0,4.38,Low priority,Low usage or weak sentiment,"B089Z96M1T, B0B68MLDZX"
+they,4,1,0.0,4.0,4.31,Low priority,Low usage or weak sentiment,B00MHP9DA4
+water,3,1,0.0,4.0,4.27,Low priority,Low usage or weak sentiment,B00MHP9DA4
+formula,3,1,0.0,4.0,4.27,Low priority,Low usage or weak sentiment,B00MHP9DA4
+the chair,2,1,0.0,4.0,4.23,Low priority,Low usage or weak sentiment,B089Z96M1T
+effort,2,1,0.0,4.0,4.23,Low priority,Low usage or weak sentiment,B00MHQ8JKS
+no dust,2,1,0.0,4.0,4.23,Low priority,Low usage or weak sentiment,B00MHQ8JKS
+few hour,2,1,0.0,4.0,4.23,Low priority,Low usage or weak sentiment,B00MHQ8JKS
+monsoon,2,1,0.0,4.0,4.23,Low priority,Low usage or weak sentiment,B00MHQ8JKS
+week,2,1,0.0,4.0,4.23,Low priority,Low usage or weak sentiment,B00XCCPOC2
+scratch,2,1,0.0,4.0,4.23,Low priority,Low usage or weak sentiment,B00XCCPOC2
+the applicator pad,2,1,0.0,4.0,4.23,Low priority,Low usage or weak sentiment,B00XCCPOC2
+petroleum extract,2,1,0.0,4.0,4.23,Low priority,Low usage or weak sentiment,B00MHP9DA4
+a lot,2,1,0.0,4.0,4.23,Low priority,Low usage or weak sentiment,B00MHP9DA4
+the slickness,2,1,0.0,4.0,4.23,Low priority,Low usage or weak sentiment,B08X1SX524
+these,2,1,0.0,4.0,4.23,Low priority,Low usage or weak sentiment,B00MHP9DA4
+good wax,2,1,0.0,4.0,4.23,Low priority,Low usage or weak sentiment,B00MHP9DA4
+the day,2,1,0.0,4.0,4.23,Low priority,Low usage or weak sentiment,B08X1SX524
+lot,2,1,0.0,4.0,4.23,Low priority,Low usage or weak sentiment,B08X1SX524
+amazing product,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+a clean and polished look,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+"a smooth, non-greasy shine",1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IHI6
+both car,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IHI6
+your car dashboard and door area,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+leather,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
+a star,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+the quality,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+the foam applicator pad,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IHI6
+good one,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+great value,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IHI6
+tyer,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IHI6
+low price,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IHI6
+a tyre new shine,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IHI6
+this price,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IHI6
+my dashboard,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IHI6
+my car tyre,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IHI6
+"a deep, glossy finish",1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IHI6
+"work well, good condition",1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+nice quality,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+the price,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+its a treat,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+thank,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+vere,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F43LVQDM
+good tyre polish,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F43LVQDM
+very affordable price,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F43LVQDM
+fast shipping,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+communication,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+the supplier,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+great item,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+my two car,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+more than 2 week,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MINEUEO
+plastic,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
+the sheeba tyre,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IHI6
+long last glossy shine,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F43LVQDM
+car interior,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
+pro,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00RLK8UXG
+my car's plastic part,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
+other product,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
+nice gloosy finish,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+bajaj pulsar,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+effectiveness,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+"overall, a great choice",1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+a nice dark look,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+dull spot,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+few crack,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+i’ve,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+that anti-aging formula,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+sun damage,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+others?:this,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+your wheel,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+uv damage,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+cracking,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+light rain,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+several day,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+a greasy residue,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+my tyre,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+super shiny finish,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+oily shine,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
+plastic part,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
+this tyre shiner,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+shines,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0F4ZFLD75
+plastic chair,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
+interior plastic coating,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
+great product,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
+natural shine,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
+finish,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
+"the ""silkytouch"" effect",1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00RLK8UXG
+a fiber cloth,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+its name,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00RLK8UXG
+smooth finish,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00RLK8UXG
+the original color,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00RLK8UXG
+"a noticeably deep, glossy finish",1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00RLK8UXG
+remove stain,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
+a few car,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00RLK8UXG
+gel,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MHQ8JKS
+a silver sedan,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00RLK8UXG
+a black hatchback,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00RLK8UXG
+my detailed experience,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00RLK8UXG
+the waxpol silkytouch car polish,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00RLK8UXG
+all my friend,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00RLK8UXG
+slight smell,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+the appearance,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+the vehicle,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+instant shine,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+awesome polish liquid,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+quality product,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+money.best,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+all job,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+nice polish,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+also plastic trim,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
+too much shine,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
+one product,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+tyre wall,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+all plastic material,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+nice packaging,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B07QPCKGL4
+excellent shine,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00RLK8UXG
+auto spa tyre gel,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0C77HQZ17
+almost 9 month,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MHQ8JKS
+liquid,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+the medium,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+sponge,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+the consistency,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+oily post,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+good finish,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+any cloth)2,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+microfiber,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+foam applicator,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+few points1) easy application,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+high quality,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+the only catch,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MHP9DA4
+7 to 8 day,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+a duster,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MHP9DA4
+2-3 week,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MHP9DA4
+some confussion,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MHP9DA4
+people,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MHP9DA4
+no applicator,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B08X1SX524
+confuse,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B08X1SX524
+the wax residue,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B08X1SX524
+good micro cloth,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B08X1SX524
+20 -30 min,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B08X1SX524
+this.3,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B08X1SX524
+some time,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+your drive,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+mind,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B08X1SX524
+your choice,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+waste,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+a while,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+many liquid,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+no bad or good smell,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+new dash,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+showroom condition,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+your car,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+good quality scratch removel,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+price,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+cycle,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+not good werry bad smell,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+tyre wet,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+but smell,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+product nice,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+smell,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+long lasting and nice finish,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+a good product,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+all,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00TC5IA2E
+any cloth,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+this type,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+the spray bottle,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+car wash shampo car polish,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00S5SAFDQ
+good applicator,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B08X1SX524
+inside2,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B08X1SX524
+my pulser bike,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MHQ8JKS
+good protection,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+good quality,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+the detail towel,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+the sponge,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+regular use,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+a year,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+one bottle,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+effective car waxing,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+dashboard,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+the image,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+the difference,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+5 year,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+many cleaner,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+half or less quantity,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+same price,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+other option,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+"non greasy non sticky, good fragrance",1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+the year,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+3-4 month,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MHQ8JKS
+the liquid,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MHQ8JKS
+the application process,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MHQ8JKS
+a new one,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MHQ8JKS
+the metal part,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00MHQ8JKS
+a faint fragrance,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+oliy,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0B68MLDZX
+a thin film,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B08X1SX524
+6 litre,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00XCCPOC2
+the glass,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B08X1SX524
+buying.1.don’t use,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B08X1SX524
+normal wax,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B08X1SX524
+this high margin wax,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B08X1SX524
+their,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00XCCPOC2
+evening,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00XCCPOC2
+april,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00XCCPOC2
+very good product,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00XCCPOC2
+black car,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00XCCPOC2
+carnauba wax,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00XCCPOC2
+very good workout,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B00XCCPOC2
+a strong applicator,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0C77HQZ17
+a small amount,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0C77HQZ17
+its promise,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0C77HQZ17
+this tyre polish,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0C77HQZ17
+car lover,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0C77HQZ17
+the 500ml bottle great value,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0C77HQZ17
+the overall look,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0C77HQZ17
+any greasy residue,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0C77HQZ17
+the tyre,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0C77HQZ17
+"a rich, glossy finish",1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0C77HQZ17
+a few week,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B0C77HQZ17
+great shine,1,1,0.0,4.0,4.19,Low priority,Low usage or weak sentiment,B089Z96M1T
