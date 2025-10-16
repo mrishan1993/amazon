@@ -20,7 +20,13 @@ def load_config(path: str = CONFIG_PATH):
 def build_per_asin_keyword_map(scraped_data: Dict[str, Dict], top_k: int = 40):
     per_asin = {}
     for asin, data in scraped_data.items():
-        combined_text = " ".join([data.get("title",""), data.get("bullets",""), data.get("description",""), data.get("enhanced","")])
+        combined_text = " ".join([
+            data.get("title",""),
+            data.get("bullets",""),
+            data.get("description",""),
+            data.get("enhanced",""),
+            " ".join(data.get("reviews", []))  # add review text
+        ])
         kws = extract_candidate_keywords(combined_text, top_k=top_k)
         per_asin[asin] = {phrase: score for phrase, score in kws}
     return per_asin

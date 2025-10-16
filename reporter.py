@@ -74,9 +74,7 @@ def aggregate_keyword_data(all_keywords: Dict[str, Dict[str, Dict]]) -> Dict[str
     # Calculate averages
     for kw, v in combined.items():
         v["asin_count"] = len(v["asins"])
-        v["avg_sentiment"] = (
-            v["sentiment_sum"] / v["asin_count"] if v["asin_count"] > 0 else 0.0
-        )
+        v["avg_sentiment"] = v["sentiment_sum"] / v["asin_count"] if v["asin_count"] > 0 else 0.0
         v["normalized_score"] = v["total_score"] / v["occurrence"] if v["occurrence"] else 0.0
 
     return combined
@@ -87,12 +85,14 @@ def enrich_keyword_data(keyword: str) -> Dict[str, str]:
     Add external enrichment using Amazon Autocomplete + Google Trends.
     """
     try:
-        related = get_related_keywords(keyword)
+        # related = get_related_keywords(keyword)
+        related = []
     except Exception:
         related = []
 
     try:
         trend = get_trend_score(keyword)
+        # trend = []
     except Exception:
         trend = 0.0
 
@@ -135,6 +135,14 @@ def save_aggregated_keywords_csv(combined: Dict[str, Dict]) -> str:
     for k, v in combined.items():
         enrich = enrich_keyword_data(k)
         trend_growth = enrich.get("trend_growth", 0)
+        # Normalize list → scalar
+        if isinstance(trend_growth, list):
+            if len(trend_growth) > 0:
+                trend_growth = trend_growth[0]
+            else:
+                trend_growth = 0
+        elif isinstance(trend_growth, dict):
+            trend_growth = trend_growth.get("score", 0)
         eff = compute_effectiveness({
             **v,
             "trend_growth": trend_growth
@@ -142,15 +150,20 @@ def save_aggregated_keywords_csv(combined: Dict[str, Dict]) -> str:
 
         rows.append({
             "keyword": k,
-            "occurrence": v["occurrence"],
-            "asin_count": v["asin_count"],
-            "avg_sentiment": round(v["avg_sentiment"], 3),
-            "normalized_score": round(v["normalized_score"], 3),
+            "occurrence": v.get("occurrence", 0),
+            "asin_count": v.get("asin_count", len(v.get("asins", []))),
+            "avg_sentiment": round(v.get("avg_sentiment", 0.0), 3),
+            "normalized_score": round(v.get("normalized_score", 0.0), 3),
             "trend_growth": trend_growth,
             "related_keywords": enrich.get("related_keywords", ""),
             "effectiveness": eff
         })
 
+    print(f"[debug] Total keywords processed: {len(rows)}")
+    if rows:
+        print(f"[debug] Example row keys: {list(rows[0].keys())}")
+    else:
+        print("[debug] No rows generated — combined dictionary may be empty or malformed.")
     df = pd.DataFrame(rows).sort_values(by="effectiveness", ascending=False)
     filename = os.path.join(
         OUTPUT_DIR, f"final_keywords_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.csv"
